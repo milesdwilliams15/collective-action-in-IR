@@ -1,0 +1,13 @@
+name: WorldData
+title: WorldData
+username:
+account: milesdwilliams15
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 7185748
+bundleId: 6362123
+url: https://milesdwilliams15.shinyapps.io/WorldData/
+when: 1664760704.98591
+lastSyncTime: 1664760704.98593
+asMultiple: FALSE
+asStatic: FALSE
