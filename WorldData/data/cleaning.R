@@ -140,7 +140,8 @@ library(democracyData)
 democracy <- download_polity_annual()
 democracy <- democracy %>%
   select(polity_annual_country, year, polity2) %>%
-  filter(year > 1960)
+  filter(year > 1960) %>%
+  distinct()
 names(democracy) <- c("Country", "year", "democracy_score")
 
 #### Population
