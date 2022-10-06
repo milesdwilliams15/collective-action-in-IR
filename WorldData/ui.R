@@ -17,6 +17,11 @@ library(texreg)
 my_data <- read_csv(
   here("data", "full_data.csv")
 )
+my_data$Region <- countrycode::countrycode(
+  my_data$Country, "country.name", "continent"
+)
+my_data <- my_data %>%
+  select(Country, Region, year, everything())
 dashboardPage(
   dashboardHeader(
     title = "War, Wealth, & World Politics", 
@@ -36,6 +41,19 @@ dashboardPage(
                 width = 30,
                 status = "primary",
                 title = "Country"
+              ),
+              box(
+                pickerInput(
+                  "SelectRegion",
+                  label = "Select Region:",
+                  choices = sort(unique(my_data$Region)),
+                  multiple = TRUE,
+                  options = list(`actions-box` = TRUE),
+                ),
+                solidHeader = TRUE,
+                width = 30,
+                status = "primary",
+                title = "Region"
               ))
     
     #
@@ -53,7 +71,6 @@ dashboardPage(
     #   downloadButton("report", "Download Report", class = "butt"),
     #   tags$head(tags$style(".butt{color: blue !important;}"))
     # )
-    
   ),
   dashboardBody(
     fluidPage(
@@ -95,6 +112,10 @@ dashboardPage(
         tabPanel("Data",
                  box(withSpinner(DTOutput(
                    "Data"
+                 )), width = 12)),
+        tabPanel("Description",
+                 box(withSpinner(DTOutput(
+                   "Description"
                  )), width = 12)),
         # tabPanel(
         #   "Data Summary",

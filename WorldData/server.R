@@ -15,18 +15,30 @@ library(texreg)
 my_data <- read_csv(
   here("data", "full_data.csv")
 )
+my_data$Region <- countrycode::countrycode(
+  my_data$Country, "country.name", "continent"
+)
+my_data <- my_data %>%
+  select(Country, Region, year, everything())
 dd <- my_data
 shinyServer(function(input, output, session) {
   
   InputDataset <- reactive({
-    if(is.null(input$SelectCountry)) {
+    if(is.null(input$SelectCountry) & is.null(input$SelectRegion)) {
       dt <- my_data %>%
-        # filter(Country == input$SelectCountry) %>%
-        .[ ,c("Country", "year", input$SelectVar1, input$SelectVar2)]
-    } else {
+        .[ ,c("Country", "Region", "year", input$SelectVar1, input$SelectVar2)]
+    } else if(!is.null(input$SelectCountry) & is.null(input$SelectRegion)){
       dt <- my_data %>%
         filter(Country %in% input$SelectCountry) %>%
-        .[ ,c("Country", "year", input$SelectVar1, input$SelectVar2)]
+        .[ ,c("Country", "Region", "year", input$SelectVar1, input$SelectVar2)]
+    } else if(is.null(input$SelectCountry) & !is.null(input$SelectRegion)){
+      dt <- my_data %>%
+        filter(Region %in% input$SelectRegion) %>%
+        .[ ,c("Country", "Region", "year", input$SelectVar1, input$SelectVar2)]
+    } else {
+      dt <- my_data %>%
+        filter(Region %in% input$SelectRegion | Region %in% input$SelectCountry) %>%
+        .[ ,c("Country", "Region", "year", input$SelectVar1, input$SelectVar2)]
     }
     dt %>% na.omit()
   })
@@ -68,14 +80,57 @@ shinyServer(function(input, output, session) {
   #   renderText(paste("Test Data:", NROW(testData()), "records"))
   # 
   output$Data <- renderDT(InputDataset(),
-                          options = list(scrollX = TRUE))
+                          options = list(scrollX = TRUE,
+                                         scrollY = TRUE))
+
+  # Add variable descriptions -----------------------------------------------
+  Description <- tibble(
+    Variable = names(my_data)[-c(1:3)],
+    Description = c(
+      "Number of recorded terrorist attacks.",
+      "Number of injuries from terrorist attacks.",
+      "Number of fatalities from terrorist attacks.",
+      "Number of officially reported nuclear weapons.",
+      "(%) Share of population with internet access.",
+      "Annual production-based emissions of carbon dioxide (CO2), measured in million tonnes.",
+      "Average life expectancy in years.",
+      "Size of the immigrant population (migrant stock).",
+      "Value of annaul imports in constant USD",
+      "Value of annual exports in constant USD",
+      "Exchange rate of currency relative to the US Dollar",
+      "Gross domestic product per capita",
+      "Polity 2 score. 10 is most democratic, and -10 is least democratic.",
+      "Population in millions",
+      "(%) Difference in value of imports relative to exports."
+    ),
+    Link = c(
+      "https://www.rand.org/nsrd/projects/terrorism-incidents.html",
+      "https://www.rand.org/nsrd/projects/terrorism-incidents.html",
+      "https://www.rand.org/nsrd/projects/terrorism-incidents.html",
+      "https://fas.org/issues/nuclear-weapons/status-world-nuclear-forces/",
+      "https://data.worldbank.org/indicator/IT.NET.USER.ZS",
+      "https://github.com/owid/co2-data",
+      "https://data.worldbank.org/indicator/SP.DYN.LE00.IN",
+      "https://data.worldbank.org/indicator/SM.POP.TOTL",
+      "https://data.worldbank.org/indicator/NE.IMP.GNFS.KD",
+      "https://data.worldbank.org/indicator/NE.EXP.GNFS.KD",
+      "https://www.rug.nl/ggdc/productivity/pwt/",
+      "https://www.rug.nl/ggdc/productivity/pwt/",
+      "https://www.systemicpeace.org/csprandd.html",
+      "https://www.rug.nl/ggdc/productivity/pwt/",
+      "see links for imports and exports."
+    )
+  ) 
   
+  output$Description <- renderDT(Description,
+                                 options = list(scrollX = TRUE,
+                                                scrollY = TRUE))
   
   #Code section for Linear Regression-----------------------------------------------------------------------------
   
   Linear_plot <- renderPlotly({
     dt <- InputDataset() 
-    names(dt) <- c("Country", "year", "var1", "var2")
+    names(dt) <- c("Country", "Region", "year", "var1", "var2")
     year <- all(dt$year == dt$var1)
     cnames <- function(x) stringr::str_replace_all(
       names(x), "_", " "
